@@ -18,8 +18,7 @@ class AppwriteService {
   AppwriteService() {
     _client = Client()
       ..setEndpoint(AppwriteConstants.endpoint)
-      ..setProject(AppwriteConstants.projectId)
-      ..setSelfSigned(status: true); // For development only
+      ..setProject(AppwriteConstants.projectId);
 
     _account = Account(_client);
     _databases = Databases(_client);
