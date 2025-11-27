@@ -73,36 +73,41 @@ class ExpensePieChart extends ConsumerWidget {
             ],
           ),
           padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 3,
-                    centerSpaceRadius: 50,
-                    startDegreeOffset: -90,
-                    sections: categoryTotals.entries.map((entry) {
-                      final percentage = (entry.value / total) * 100;
-                      return PieChartSectionData(
-                        color: _getColorForCategory(entry.key),
-                        value: entry.value,
-                        title: '${percentage.toStringAsFixed(0)}%',
-                        radius: 60,
-                        titleStyle: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        badgeWidget: null,
-                      );
-                    }).toList(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+              
+              final chartSection = Expanded(
+                flex: isMobile ? 0 : 3,
+                child: SizedBox(
+                  height: isMobile ? 200 : null,
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 3,
+                      centerSpaceRadius: 50,
+                      startDegreeOffset: -90,
+                      sections: categoryTotals.entries.map((entry) {
+                        final percentage = (entry.value / total) * 100;
+                        return PieChartSectionData(
+                          color: _getColorForCategory(entry.key),
+                          value: entry.value,
+                          title: '${percentage.toStringAsFixed(0)}%',
+                          radius: 60,
+                          titleStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          badgeWidget: null,
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                flex: 2,
+              );
+
+              final legendSection = Expanded(
+                flex: isMobile ? 0 : 2,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,6 +115,7 @@ class ExpensePieChart extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
                             width: 12,
@@ -120,7 +126,7 @@ class ExpensePieChart extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(
+                          Flexible(
                             child: Text(
                               _getCategoryName(entry.key),
                               style: const TextStyle(
@@ -135,8 +141,26 @@ class ExpensePieChart extends ConsumerWidget {
                     );
                   }).toList(),
                 ),
-              ),
-            ],
+              );
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    chartSection,
+                    const SizedBox(height: 24),
+                    legendSection,
+                  ],
+                );
+              } else {
+                return Row(
+                  children: [
+                    chartSection,
+                    const SizedBox(width: 20),
+                    legendSection,
+                  ],
+                );
+              }
+            },
           ),
         );
       },

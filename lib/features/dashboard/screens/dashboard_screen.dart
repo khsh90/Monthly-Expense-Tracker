@@ -316,6 +316,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 const TransactionList(),
+                const SizedBox(height: 80),
               ],
             ),
           );
