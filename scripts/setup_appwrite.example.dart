@@ -10,6 +10,10 @@ const String monthsCollectionId = 'months';
 const String transactionsCollectionId = 'transactions';
 const String templatesCollectionId = 'transaction_templates';
 
+// ... rest of the script is generic logic ...
+// For brevity in the example, we can just include the main structure or the full file with placeholders.
+// I will include the full file content but with placeholders to be a proper example.
+
 Future<void> main() async {
   final headers = {
     'X-Appwrite-Project': projectId,
