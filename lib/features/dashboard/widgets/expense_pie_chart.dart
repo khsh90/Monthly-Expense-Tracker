@@ -80,7 +80,7 @@ class ExpensePieChart extends ConsumerWidget {
               final chartSection = Expanded(
                 flex: isMobile ? 0 : 3,
                 child: SizedBox(
-                  height: isMobile ? 200 : null,
+                  height: isMobile ? 300 : null,
                   child: PieChart(
                     PieChartData(
                       sectionsSpace: 3,

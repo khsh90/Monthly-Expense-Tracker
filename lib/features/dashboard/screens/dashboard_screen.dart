@@ -1,3 +1,4 @@
+import 'package:expense_tracker/features/auth/providers/auth_provider.dart';
 import 'package:expense_tracker/features/dashboard/widgets/expense_pie_chart.dart';
 import 'package:expense_tracker/features/dashboard/widgets/summary_card.dart';
 import 'package:expense_tracker/features/months/providers/months_provider.dart';
@@ -39,13 +40,52 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'المصاريف الشهرية',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            const Flexible(
+              child: Text(
+                'المصاريف الشهرية',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.logout_rounded, color: Colors.red),
+            ),
+            tooltip: 'تسجيل الخروج',
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  title: const Text('تسجيل الخروج'),
+                  content: const Text('هل أنت متأكد من تسجيل الخروج؟'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('إلغاء'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      child: const Text('خروج'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                ref.read(authStateProvider.notifier).logout();
+              }
+            },
+          ),
           IconButton(
             icon: Container(
               padding: const EdgeInsets.all(8),

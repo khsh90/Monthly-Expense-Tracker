@@ -1,5 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:appwrite/models.dart' as models;
+import 'package:appwrite/enums.dart';
 import 'package:expense_tracker/core/constants/appwrite_constants.dart';
 import 'package:expense_tracker/features/months/models/month.dart';
 import 'package:expense_tracker/features/transactions/models/transaction.dart';
@@ -14,6 +15,7 @@ class AppwriteService {
   late Client _client;
   late Account _account;
   late Databases _databases;
+  String? _userId;
 
   AppwriteService() {
     _client = Client()
@@ -25,6 +27,19 @@ class AppwriteService {
   }
 
   // Auth
+  Future<models.User> signUp({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    return await _account.create(
+      userId: ID.unique(),
+      email: email,
+      password: password,
+      name: name,
+    );
+  }
+
   Future<models.Session> login(String email, String password) async {
     try {
       return await _account.createEmailPasswordSession(
@@ -37,8 +52,32 @@ class AppwriteService {
     }
   }
 
+  Future<void> loginWithOAuth2({required OAuthProvider provider}) async {
+    await _account.createOAuth2Session(
+      provider: provider,
+    );
+  }
+
   Future<models.User> getUser() async {
-    return await _account.get();
+    final user = await _account.get();
+    _userId = user.$id;
+    return user;
+  }
+
+  Future<String> _getUserId() async {
+    if (_userId != null) return _userId!;
+    final user = await getUser();
+    return user.$id;
+  }
+
+  bool _canRead(models.Document doc, String userId) {
+    if (doc.$permissions.isEmpty) return true; // Fallback if no permissions
+    // Check for specific user read permission
+    // Appwrite returns permissions like 'read("user:ID")' or 'user:ID'
+    return doc.$permissions.any((p) => 
+      p == 'user:$userId' || 
+      p == 'read("user:$userId")' ||
+      p.contains('user:$userId'));
   }
 
   Future<void> logout() async {
@@ -52,6 +91,7 @@ class AppwriteService {
     required int monthIndex,
   }) async {
     final id = ID.unique();
+    final userId = await _getUserId();
     final doc = await _databases.createDocument(
       databaseId: AppwriteConstants.databaseId,
       collectionId: AppwriteConstants.monthsCollectionId,
@@ -64,11 +104,16 @@ class AppwriteService {
         'total_expense': 0.0,
         'remaining_balance': 0.0,
       },
+      permissions: [
+        Permission.read(Role.user(userId)),
+        Permission.write(Role.user(userId)),
+      ],
     );
     return Month.fromJson(doc.data);
   }
 
   Future<List<Month>> getMonths() async {
+    final userId = await _getUserId();
     final result = await _databases.listDocuments(
       databaseId: AppwriteConstants.databaseId,
       collectionId: AppwriteConstants.monthsCollectionId,
@@ -77,7 +122,10 @@ class AppwriteService {
         Query.orderDesc('month_index'),
       ],
     );
-    return result.documents.map((e) => Month.fromJson(e.data)).toList();
+    return result.documents
+        .where((doc) => _canRead(doc, userId))
+        .map((e) => Month.fromJson(e.data))
+        .toList();
   }
 
   // Database - Transactions
@@ -89,6 +137,7 @@ class AppwriteService {
     required bool isFixed,
   }) async {
     final id = ID.unique();
+    final userId = await _getUserId();
     final doc = await _databases.createDocument(
       databaseId: AppwriteConstants.databaseId,
       collectionId: AppwriteConstants.transactionsCollectionId,
@@ -100,6 +149,10 @@ class AppwriteService {
         'amount': amount,
         'is_fixed': isFixed,
       },
+      permissions: [
+        Permission.read(Role.user(userId)),
+        Permission.write(Role.user(userId)),
+      ],
     );
     return TransactionModel.fromJson(doc.data);
   }
@@ -112,7 +165,11 @@ class AppwriteService {
         Query.equal('month_id', monthId),
       ],
     );
-    return result.documents.map((e) => TransactionModel.fromJson(e.data)).toList();
+    final userId = await _getUserId();
+    return result.documents
+        .where((doc) => _canRead(doc, userId))
+        .map((e) => TransactionModel.fromJson(e.data))
+        .toList();
   }
 
   Future<TransactionModel> updateTransaction({
@@ -234,6 +291,7 @@ class AppwriteService {
 
   Future<List<TransactionTemplate>> getTemplates() async {
     try {
+      final userId = await _getUserId();
       final docs = await _databases.listDocuments(
         databaseId: AppwriteConstants.databaseId,
         collectionId: AppwriteConstants.templatesCollectionId,
@@ -241,6 +299,7 @@ class AppwriteService {
 
       print('Templates fetched: ${docs.documents.length} templates found');
       return docs.documents
+          .where((doc) => _canRead(doc, userId))
           .map((doc) => TransactionTemplate.fromJson(doc.data))
           .toList();
     } catch (e) {
@@ -257,6 +316,8 @@ class AppwriteService {
     try {
       final id = ID.unique();
       print('Creating template: $title with amount $amount in category ${_categoryToString(categoryMain)}');
+      final userId = await _getUserId();
+      print('Creating template: $title with amount $amount in category ${_categoryToString(categoryMain)}');
       final doc = await _databases.createDocument(
         databaseId: AppwriteConstants.databaseId,
         collectionId: AppwriteConstants.templatesCollectionId,
@@ -266,6 +327,10 @@ class AppwriteService {
           'title': title,
           'amount': amount,
         },
+        permissions: [
+          Permission.read(Role.user(userId)),
+          Permission.write(Role.user(userId)),
+        ],
       );
       print('Template created successfully: ${doc.$id}');
       return TransactionTemplate.fromJson(doc.data);

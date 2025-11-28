@@ -1,3 +1,4 @@
+import 'package:expense_tracker/features/auth/widgets/auth_wrapper.dart';
 import 'package:expense_tracker/features/dashboard/screens/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -65,7 +66,7 @@ class MyApp extends StatelessWidget {
         Locale('ar', 'AE'),
       ],
       locale: const Locale('ar', 'AE'),
-      home: const DashboardScreen(),
+      home: const AuthWrapper(),
     );
   }
 }
